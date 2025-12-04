@@ -1,0 +1,329 @@
+✦ "Bản thiết kế" đã xong.
+
+  ---
+  Bước 2.2: Cài đặt thư viện gRPC.
+
+  Giải thích chi tiết:
+
+  Bây giờ chúng ta cần các "dụng cụ" để có thể xây dựng một service dựa trên bản thiết kế .proto đó. Để    
+  chạy được một gRPC service bên trong một ứng dụng ASP.NET Core, chúng ta cần một thư viện chính thức của 
+  Microsoft là Grpc.AspNetCore.
+
+  Thư viện này cung cấp tất cả những gì cần thiết:
+   1. Tích hợp gRPC server vào web server có sẵn của project.
+   2. Cung cấp các công cụ để tự động biên dịch file .proto của chúng ta thành code C# (chúng ta sẽ thấy ở 
+      bước sau).
+   3. Cung cấp các lớp cơ sở mà gRPC service của chúng ta sẽ kế thừa từ đó.
+
+  Nó là gói "tất cả trong một" để bắt đầu với gRPC trên ASP.NET Core.
+Bước 2.4: Viết code logic cho gRPC Service.
+
+  Giải thích chi tiết:
+
+  Bây giờ, khi project được build, file Book.proto của chúng ta sẽ được công cụ gRPC tự động dịch thành một
+  lớp C# "trừu tượng" có tên là BookStockService.BookStockServiceBase. Lớp này chứa các định nghĩa về các  
+  hàm CheckAvailability, ReserveBook, ReturnBook nhưng chưa có code xử lý bên trong.
+
+  Nhiệm vụ của chúng ta bây giờ là tạo một lớp C# bình thường, kế thừa từ lớp
+  BookStockService.BookStockServiceBase đó, và viết code để hiện thực hóa các phương thức mà "hợp đồng" đã 
+  định nghĩa.
+
+  Lớp C# này sẽ:
+   1. Sử dụng IBookRepository mà chúng ta đã làm sạch ở các bước trước để tương tác với cơ sở dữ liệu.     
+   2. Triển khai logic cho từng hàm: ví dụ, với ReserveBook, service sẽ tìm sách trong CSDL, kiểm tra xem  
+      AvailableCopies có lớn hơn 0 không, nếu có thì trừ đi 1 và lưu lại.
+
+  Hành động tiếp theo:
+
+  Để giữ cho code được gọn gàng, tôi sẽ tạo một thư mục mới là GrpcServices và tạo file
+  BookStockGrpcService.cs bên trong đó với toàn bộ code logic cần thiết.
+
+✦ Đã thêm thư viện thành công.
+
+  ---
+  Bước 2.3: "Dạy" project cách biên dịch file `.proto`
+
+  Giải thích chi tiết:
+
+  Bây giờ chúng ta cần chỉ cho project biết cách dùng thư viện gRPC vừa cài để xử lý "bản thiết kế"        
+  (Book.proto).
+
+  File .proto không phải là code C#. Do đó, project của chúng ta cần phải được cấu hình để nó có thể tự    
+  động biên dịch file .proto này thành các lớp C# cơ sở (base classes) mỗi khi bạn build project. Những lớp
+  C# được tạo ra tự động này chính là nền tảng để chúng ta viết code logic cho gRPC service ở bước tiếp    
+  theo.
+
+  Việc này được thực hiện bằng cách thêm một vài dòng vào file BookCatalogService.csproj để chỉ định rằng  
+  file Proto/Book.proto là một file Protobuf và chúng ta muốn tạo code cho Server.
+
+  ---
+  Hành động tiếp theo:
+
+  Tôi sẽ đọc và cập nhật file BookCatalogService.csproj để thêm vào cấu hình biên dịch cho file .proto.
+
+✦ Đã tạo xong lớp BookStockGrpcService. Đây là nơi chứa toàn bộ logic xử lý cho các cuộc gọi gRPC.
+
+  ---
+  Bước 2.5: Đăng ký và "kích hoạt" gRPC Service.
+
+  Giải thích chi tiết:
+
+  Đây là bước cuối cùng để hoàn thiện gRPC service. Chúng ta đã có "bản thiết kế" (.proto) và "nhà máy"    
+  (BookStockGrpcService.cs). Bây giờ là lúc cắm điện cho nhà máy và treo biển hiệu để các service khác biết
+  đường tìm đến.
+
+  Chúng ta cần phải báo cho file Program.cs (trung tâm đầu não của ứng dụng) biết về sự tồn tại của gRPC   
+  service này bằng 2 việc:
+
+   1. Đăng ký dịch vụ gRPC: Bằng cách thêm builder.Services.AddGrpc(), chúng ta đăng ký các dịch vụ gRPC   
+      cốt lõi vào hệ thống.
+   2. Ánh xạ điểm cuối (Endpoint): Bằng cách thêm app.MapGrpcService<BookStockGrpcService>(), chúng ta nói 
+      với ứng dụng rằng: "Khi có một cuộc gọi gRPC đến service BookStockService, hãy chuyển nó cho lớp     
+      BookStockGrpcService của tôi xử lý". Nếu không có dòng này, ứng dụng sẽ không biết phải làm gì với   
+      các cuộc gọi gRPC.
+
+  ---
+  Hành động tiếp theo:
+
+  Tôi sẽ cập nhật file Program.cs để thêm 2 dòng cấu hình quan trọng này, hoàn tất việc cài đặt gRPC.
+
+
+
+✦ Tuyệt vời. Chúng ta sẽ thực hiện chức năng này theo đúng kiến trúc 3 lớp, đi từ dưới lên.
+
+  ---
+  Bước 1: Nâng cấp Repository để hỗ trợ lọc dữ liệu
+
+  Giải thích:
+  Đầu tiên, chúng ta cần "dạy" cho BookRepository cách xây dựng một câu truy vấn động. Thay vì luôn luôn   
+  lấy tất cả sách, nó cần phải biết cách thêm các điều kiện WHERE vào câu truy vấn nếu chúng ta cung cấp   
+  title hoặc author.
+
+  Chúng ta sẽ sửa lại phương thức GetAllAsync để nó nhận vào 2 tham số title và author. Bên trong, nó sẽ   
+  xây dựng câu truy vấn LINQ một cách thông minh: chỉ thêm điều kiện lọc khi tham số tương ứng được cung   
+  cấp.
+
+  Hành động tiếp theo:
+  Tôi sẽ cập nhật lại IBookRepository.cs và BookRepository.cs với logic mới này.
+
+
+✦ Đã vô hiệu hóa tạm thời. Giờ bạn có thể test tất cả các API mà không cần token.        
+
+  Dưới đây là quy trình test đầy đủ cho BookCatalogService.
+
+  ---
+  Quy trình Test `BookCatalogService`
+
+  Bước 1: Chạy `BookCatalogService`
+   1. Mở một terminal mới (nếu terminal cũ đang chạy UserService, bạn cứ để nó chạy).    
+   2. Đảm bảo bạn đang ở thư mục gốc D:\Test\1\OnboardTrain\Library.
+   3. Chạy lệnh: dotnet run --project BookCatalogService
+   4. Ghi lại địa chỉ https://localhost:YYYY mà service đang lắng nghe.
+
+  Bước 2: Mở giao diện Swagger UI
+   1. Mở trình duyệt.
+   2. Vào địa chỉ: https://localhost:YYYY/swagger (thay YYYY bằng số cổng của bạn).      
+
+  Bước 3: Thực hiện các kịch bản Test
+
+  ##### Phần 1: Test các chức năng CRUD
+
+   * TC1 - Lấy tất cả sách (Lúc đầu rỗng):
+       * Mở GET /api/Book.
+       * Bấm "Execute".
+       * Kết quả mong muốn: Code 200, response body là một danh sách rỗng [].
+
+   * TC2 - Thêm sách 1 (Thành công):
+       * Mở POST /api/Book, bấm "Try it out".
+       * Nhập body:
+
+   1         { "title": "Lập trình C#", "authorName": "Anders Hejlsberg", "availableCopie
+     : 10 }
+       * Bấm "Execute".
+       * Kết quả mong muốn: Code 200, response body chứa thông tin sách vừa tạo. Hãy ghi 
+         lại `id` của cuốn sách này.
+
+   * TC3 - Thêm sách 2 (Thành công):
+       * Mở POST /api/Book, bấm "Try it out".
+       * Nhập body:
+   1         { "title": "Clean Code", "authorName": "Robert C. Martin", "availableCopies"
+     5 }
+       * Bấm "Execute".
+       * Kết quả mong muốn: Code 200.
+
+   * TC4 - Thêm sách thiếu Tiêu đề (Thất bại):
+       * Mở POST /api/Book, bấm "Try it out".
+       * Nhập body: { "authorName": "Some One", "availableCopies": 1 }
+       * Bấm "Execute".
+       * Kết quả mong muốn: Code 400 (Bad Request), vì title là [Required].
+
+   * TC5 - Lấy một sách theo ID (Thành công):
+       * Mở GET /api/Book/{id}.
+       * Bấm "Try it out", nhập id của sách "Lập trình C#" đã ghi lại ở TC2.
+       * Bấm "Execute".
+       * Kết quả mong muốn: Code 200, response body chứa chi tiết sách "Lập trình C#".   
+
+   * TC6 - Cập nhật sách (Thành công):
+       * Mở PUT /api/Book/{id}.
+       * Bấm "Try it out", nhập id của sách "Lập trình C#" (từ TC2).
+       * Nhập body:
+
+   1         { "title": "Lập trình C# Toàn Tập", "author": "Anders Hejlsberg",
+     "availableCopies": 15 }
+       * Bấm "Execute".
+       * Kết quả mong muốn: Code 200, response body chứa thông tin sách đã được cập nhật.
+
+   * TC7 - Xóa sách (Thành công):
+       * Mở DELETE /api/Book/{id}.
+       * Bấm "Try it out", nhập id của sách "Lập trình C# Toàn Tập" (từ TC2).
+       * Bấm "Execute".
+       * Kết quả mong muốn: Code 200, response body có success: true.
+
+   * TC8 - Lấy lại sách đã xóa (Thất bại):
+       * Mở GET /api/Book/{id}.
+       * Bấm "Try it out", nhập lại id đã xóa ở TC7.
+       * Bấm "Execute".
+       * Kết quả mong muốn: Code 404 (Not Found).
+
+  ##### Phần 2: Test chức năng Tìm kiếm/Lọc
+  (Lúc này trong CSDL chỉ còn sách "Clean Code")
+
+   * TC9 - Lấy tất cả sách (còn lại 1):
+       * Mở GET /api/Book.
+       * Bấm "Execute".
+       * Kết quả mong muốn: Code 200, response body là danh sách chỉ chứa 1 cuốn sách    
+         "Clean Code".
+
+   * TC10 - Tìm sách theo Tên (Tìm thấy):
+       * Mở GET /api/Book, bấm "Try it out".
+       * Trong ô title, nhập chữ Clean.
+       * Bấm "Execute".
+       * Kết quả mong muốn: Code 200, danh sách trả về chứa sách "Clean Code".
+
+   * TC11 - Tìm sách theo Tác giả (Tìm thấy):
+       * Mở GET /api/Book, bấm "Try it out".
+       * Trong ô author, nhập chữ Martin.
+       * Bấm "Execute".
+       * Kết quả mong muốn: Code 200, danh sách trả về chứa sách "Clean Code".
+
+   * TC12 - Tìm sách theo Tên (Không tìm thấy):
+       * Mở GET /api/Book, bấm "Try it out".
+       * Trong ô title, nhập chữ Java.
+       * Bấm "Execute".
+       * Kết quả mong muốn: Code 200, response body là một danh sách rỗng [].
+
+✦ Đã vô hiệu hóa tạm thời. Giờ bạn có thể test tất cả các API mà không cần token.        
+
+  Dưới đây là quy trình test đầy đủ cho BookCatalogService.
+
+  ---
+  Quy trình Test `BookCatalogService`
+
+  Bước 1: Chạy `BookCatalogService`
+   1. Mở một terminal mới (nếu terminal cũ đang chạy UserService, bạn cứ để nó chạy).    
+   2. Đảm bảo bạn đang ở thư mục gốc D:\Test\1\OnboardTrain\Library.
+   3. Chạy lệnh: dotnet run --project BookCatalogService
+   4. Ghi lại địa chỉ https://localhost:YYYY mà service đang lắng nghe.
+
+  Bước 2: Mở giao diện Swagger UI
+   1. Mở trình duyệt.
+   2. Vào địa chỉ: https://localhost:YYYY/swagger (thay YYYY bằng số cổng của bạn).      
+
+  Bước 3: Thực hiện các kịch bản Test
+
+  ##### Phần 1: Test các chức năng CRUD
+
+   * TC1 - Lấy tất cả sách (Lúc đầu rỗng):
+       * Mở GET /api/Book.
+       * Bấm "Execute".
+       * Kết quả mong muốn: Code 200, response body là một danh sách rỗng [].
+
+   * TC2 - Thêm sách 1 (Thành công):
+       * Mở POST /api/Book, bấm "Try it out".
+       * Nhập body:
+
+   1         { "title": "Lập trình C#", "authorName": "Anders Hejlsberg", "availableCopie
+     : 10 }
+       * Bấm "Execute".
+       * Kết quả mong muốn: Code 200, response body chứa thông tin sách vừa tạo. Hãy ghi 
+         lại `id` của cuốn sách này.
+
+   * TC3 - Thêm sách 2 (Thành công):
+       * Mở POST /api/Book, bấm "Try it out".
+       * Nhập body:
+   1         { "title": "Clean Code", "authorName": "Robert C. Martin", "availableCopies"
+     5 }
+       * Bấm "Execute".
+       * Kết quả mong muốn: Code 200.
+
+   * TC4 - Thêm sách thiếu Tiêu đề (Thất bại):
+       * Mở POST /api/Book, bấm "Try it out".
+       * Nhập body: { "authorName": "Some One", "availableCopies": 1 }
+       * Bấm "Execute".
+       * Kết quả mong muốn: Code 400 (Bad Request), vì title là [Required].
+
+   * TC5 - Lấy một sách theo ID (Thành công):
+       * Mở GET /api/Book/{id}.
+       * Bấm "Try it out", nhập id của sách "Lập trình C#" đã ghi lại ở TC2.
+       * Bấm "Execute".
+       * Kết quả mong muốn: Code 200, response body chứa chi tiết sách "Lập trình C#".   
+
+   * TC6 - Cập nhật sách (Thành công):
+       * Mở PUT /api/Book/{id}.
+       * Bấm "Try it out", nhập id của sách "Lập trình C#" (từ TC2).
+       * Nhập body:
+
+   1         { "title": "Lập trình C# Toàn Tập", "author": "Anders Hejlsberg",
+     "availableCopies": 15 }
+       * Bấm "Execute".
+       * Kết quả mong muốn: Code 200, response body chứa thông tin sách đã được cập nhật.
+
+   * TC7 - Xóa sách (Thành công):
+       * Mở DELETE /api/Book/{id}.
+       * Bấm "Try it out", nhập id của sách "Lập trình C# Toàn Tập" (từ TC2).
+       * Bấm "Execute".
+       * Kết quả mong muốn: Code 200, response body có success: true.
+
+   * TC8 - Lấy lại sách đã xóa (Thất bại):
+       * Mở GET /api/Book/{id}.
+       * Bấm "Try it out", nhập lại id đã xóa ở TC7.
+       * Bấm "Execute".
+       * Kết quả mong muốn: Code 404 (Not Found).
+
+  ##### Phần 2: Test chức năng Tìm kiếm/Lọc
+  (Lúc này trong CSDL chỉ còn sách "Clean Code")
+
+   * TC9 - Lấy tất cả sách (còn lại 1):
+       * Mở GET /api/Book.
+       * Bấm "Execute".
+       * Kết quả mong muốn: Code 200, response body là danh sách chỉ chứa 1 cuốn sách    
+         "Clean Code".
+
+   * TC10 - Tìm sách theo Tên (Tìm thấy):
+       * Mở GET /api/Book, bấm "Try it out".
+       * Trong ô title, nhập chữ Clean.
+       * Bấm "Execute".
+       * Kết quả mong muốn: Code 200, danh sách trả về chứa sách "Clean Code".
+
+   * TC11 - Tìm sách theo Tác giả (Tìm thấy):
+       * Mở GET /api/Book, bấm "Try it out".
+       * Trong ô author, nhập chữ Martin.
+       * Bấm "Execute".
+       * Kết quả mong muốn: Code 200, danh sách trả về chứa sách "Clean Code".
+
+   * TC12 - Tìm sách theo Tên (Không tìm thấy):
+       * Mở GET /api/Book, bấm "Try it out".
+       * Trong ô title, nhập chữ Java.
+       * Bấm "Execute".
+       * Kết quả mong muốn: Code 200, response body là một danh sách rỗng [].
+------
+Ghi chu
+Co the lam try catch cho don gian va hiểu của
+Categories name la rong
+Cap nha 1 trường du lieu thoi
+Phai lam them email
+Neu Kong user thi không cho muốn
+Enum status cho dong bo
+tạo env chung cho connection string
+(int)book.AvailableCopies!
+

@@ -1,0 +1,126 @@
+===========================================================
+KẾ HOẠCH TEST - SERVICE BORROW, NOTIFICATION, API GATEWAY (CHI TIẾT)
+===========================================================
+
+I. MÔI TRƯỜNG VÀ CÁC BƯỚC CHUẨN BỊ
+------------------------------------
+1.  **Khởi chạy Services:** Chạy đồng thời 5 services: `ApiGateway`, `UserService`, `BookCatalogService`, `BorrowingService`, `NotificationService`.
+2.  **Lấy Token:**
+    - Đăng ký:
+      ```sh
+      curl -X POST "http://localhost:5000/gateway/auth/register" -H "Content-Type: application/json" -d '{"username": "testuser", "password": "password123"}'
+      ```
+    - Đăng nhập và lưu lại token từ response:
+      ```sh
+      curl -X POST "http://localhost:5000/gateway/auth/login" -H "Content-Type: application/json" -d '{"username": "testuser", "password": "password123"}'
+      ```
+3.  **Tạo Dữ liệu Sách:**
+    - Thay `<YOUR_TOKEN>` bằng token bạn vừa lấy.
+    - Chạy lệnh sau để tạo một cuốn sách với ID là 1 và 5 bản copy.
+      ```sh
+      curl -X POST "http://localhost:5000/gateway/books" -H "Content-Type: application/json" -H "Authorization: Bearer <YOUR_TOKEN>" -d '{"title": "The Lord of the Rings", "authorName": "J.R.R. Tolkien", "availableCopies": 5, "categoryIds": [1]}'
+      ```
+
+II. KỊCH BẢN TEST (TEST CASES)
+------------------------------------
+
+### A. TEST CASE CHO API GATEWAY
+Mục tiêu: Kiểm tra Gateway có điều hướng request đến đúng service hay không.
+
+1.  **[TC_GW_01] Điều hướng đến UserService:**
+    - **Cách thực hiện:** Chạy lệnh đăng nhập ở Bước I.2.
+    - **Kết quả mong muốn:** Nhận được response 200 OK và một JWT token.
+
+2.  **[TC_GW_02] Điều hướng đến BookCatalogService (GET all):**
+    - **Cách thực hiện:**
+      ```sh
+      curl "http://localhost:5000/gateway/books"
+      ```
+    - **Kết quả mong muốn:** Nhận được response 200 OK và một JSON array chứa các cuốn sách.
+
+3.  **[TC_GW_03] Điều hướng đến BorrowingService (Borrow):**
+    - **Cách thực hiện:** Thực hiện theo test case `[TC_BR_01]` bên dưới.
+    - **Kết quả mong muốn:** Nhận được response 200 OK từ `BorrowingService`.
+
+4.  **[TC_GW_04] Lỗi 404 - Sai đường dẫn:**
+    - **Cách thực hiện:**
+      ```sh
+      curl "http://localhost:5000/gateway/invalid/path"
+      ```
+    - **Kết quả mong muốn:** Terminal trả về lỗi 404 Not Found.
+
+5.  **[TC_GW_05] Lỗi 404 - Sai phương thức HTTP:**
+    - **Cách thực hiện:**
+      ```sh
+      curl -X DELETE "http://localhost:5000/gateway/auth/login"
+      ```
+    - **Kết quả mong muốn:** Terminal trả về lỗi 404 Not Found.
+
+*(Các test case còn lại cho Gateway tương tự, tập trung vào việc gọi đúng path và nhận được response 200 OK là đủ để chứng minh gateway hoạt động)*
+
+### B. TEST CASE CHO BORROWING SERVICE
+(Yêu cầu có JWT Token và sách đã được tạo ở Bước I)
+
+1.  **[TC_BR_01] Thành công: Mượn 1 cuốn sách có sẵn.**
+    - **Cách thực hiện:** Thay `<YOUR_TOKEN>` và dùng ID sách là 1.
+      ```sh
+      curl -X POST "http://localhost:5000/gateway/borrowing/borrow" \
+      -H "Content-Type: application/json" -H "Authorization: Bearer <YOUR_TOKEN>" \
+      -d '{"borrowItems": [{"bookId": 1, "quantity": 1}],"dueDate": "2025-12-31T00:00:00Z"}'
+      ```
+    - **Kết quả mong muốn:** Response 200 OK. Log của `NotificationService` nhận được event `email.borrow`. Lưu lại `id` của `borrowingItem` để test trả sách.
+
+2.  **[TC_BR_02] Thất bại: Mượn sách không có token.**
+    - **Cách thực hiện:** Chạy lại lệnh trên nhưng không có header `-H "Authorization: Bearer <YOUR_TOKEN>"`.
+    - **Kết quả mong muốn:** Response 401 Unauthorized.
+
+3.  **[TC_BR_03] Thất bại: Mượn sách không tồn tại.**
+    - **Cách thực hiện:** Chạy lệnh ở [TC_BR_01] nhưng với `bookId` là 999.
+    - **Kết quả mong muốn:** Response 400 Bad Request.
+
+4.  **[TC_BR_04] Thất bại: Mượn sách đã hết hàng.**
+    - **Cách thực hiện:** Cập nhật số lượng sách ID 1 về 0, sau đó chạy lại lệnh ở [TC_BR_01].
+    - **Kết quả mong muốn:** Response 400 Bad Request báo "hết hàng".
+
+5.  **[TC_BR_05] Thành công: Trả sách.**
+    - **Cách thực hiện:** Thay `<YOUR_TOKEN>` và `<ITEM_ID>` (lấy từ response của [TC_BR_01]).
+      ```sh
+      curl -X POST "http://localhost:5000/gateway/borrowing/return?itemId=<ITEM_ID>" \
+      -H "Authorization: Bearer <YOUR_TOKEN>"
+      ```
+    - **Kết quả mong muốn:** Response 200 OK. Log của `NotificationService` nhận được event `email.return`.
+
+6.  **[TC_BR_06] Thất bại: Trả sách 2 lần.**
+    - **Cách thực hiện:** Chạy lại chính xác lệnh ở [TC_BR_05].
+    - **Kết quả mong muốn:** Response 400 Bad Request báo "sách đã được trả".
+
+7.  **[TC_BR_07] Thất bại: Trả sách với item ID không tồn tại.**
+    - **Cách thực hiện:** Chạy lệnh ở [TC_BR_05] nhưng với `itemId` là 999.
+    - **Kết quả mong muốn:** Response 400 Bad Request.
+
+### C. TEST CASE CHO NOTIFICATION SERVICE
+(Test bằng cách quan sát log sau khi thực hiện các test case của Borrowing Service)
+
+1.  **[TC_NF_01] Thành công: Nhận và xử lý event mượn sách.**
+    - **Cách thực hiện:** Chạy thành công test case `[TC_BR_01]`.
+    - **Kết quả mong muốn:** Cửa sổ log của `NotificationService` hiện ra:
+      1. Dòng `--> Received message: ...` với nội dung event `BookBorrowed`.
+      2. Dòng `Sending email to...` từ `EmailService`.
+
+2.  **[TC_NF_02] Thành công: Nhận và xử lý event trả sách.**
+    - **Cách thực hiện:** Chạy thành công test case `[TC_BR_05]`.
+    - **Kết quả mong muốn:** Cửa sổ log của `NotificationService` hiện ra:
+      1. Dòng `--> Received message: ...` với nội dung event `BookReturned`.
+      2. Dòng `Sending email to...` từ `EmailService`.
+
+3.  **[TC_NF_03] Thành công: Xử lý message lỗi (JSON sai định dạng).**
+    - **Cách thực hiện (Nâng cao):** Dùng RabbitMQ Management UI, vào queue `notification_queue` và publish một message với nội dung `{"invalid": "json"}`.
+    - **Kết quả mong muốn:** `NotificationService` log ra "message that could not be deserialized" và message đó được xóa khỏi queue (không xử lý lại).
+
+4.  **[TC_NF_04] Thành công: Tự kết nối lại.**
+    - **Cách thực hiện:**
+      1. Chạy tất cả services.
+      2. Tắt RabbitMQ đi.
+      3. Quan sát log của `NotificationService`.
+      4. Bật lại RabbitMQ.
+    - **Kết quả mong muốn:** Log báo lỗi `Could not connect to RabbitMQ. Retrying...`, và sau khi RabbitMQ bật lại, log báo `RabbitMQ connection established` xuất hiện.

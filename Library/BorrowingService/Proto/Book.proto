@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+option csharp_namespace = "BooksCatalogService.Protos";
+
+package book;
+
+// Service for book stock and availability management
+service BookStockService {
+  // Checks if a book exists and has enough copies
+  rpc CheckAvailability (CheckAvailabilityRequest) returns (CheckAvailabilityResponse);
+
+  // Decrements the stock of a book when it's borrowed
+  rpc ReserveBook (BookActionRequest) returns (BookActionResponse);
+
+  // Increments the stock of a book when it's returned
+  rpc ReturnBook (BookActionRequest) returns (BookActionResponse);
+  
+}
+
+// -- Messages --
+
+message CheckAvailabilityRequest {
+  int32 book_id = 1;
+}
+
+message CheckAvailabilityResponse {
+  bool exists = 1;
+  bool is_available = 2; // True if AvailableCopies > 0
+  string title = 4;
+  int32 available_copies = 3;
+}
+
+message BookActionRequest {
+  int32 book_id = 1;
+}
+
+message BookActionResponse {
+  bool success = 1;
+}
+
