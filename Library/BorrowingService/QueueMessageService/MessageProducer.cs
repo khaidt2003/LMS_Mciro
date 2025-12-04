@@ -32,16 +32,16 @@ namespace BorrowingService.AsyncDataServices
         {
             try
             {
-                // CreateConnectionAsync thay vì CreateConnection
                 _connection = await _factory.CreateConnectionAsync();
                 
-                // CreateChannelAsync thay vì CreateModel
                 _channel = await _connection.CreateChannelAsync();
+                await _channel.ExchangeDeclareAsync(
+                    exchange: "library_exchange", 
+                    type: ExchangeType.Direct, 
+                    durable: true 
+                );
 
-                // ExchangeDeclareAsync
-                await _channel.ExchangeDeclareAsync(exchange: "library_exchange", type: ExchangeType.Direct);
-
-                Console.WriteLine("--> Kết nối RabbitMQ (Async) thành công");
+                Console.WriteLine("--> Connect RabbitMQ (Async) Sucess");
             }
             catch (Exception ex)
             {
@@ -51,31 +51,28 @@ namespace BorrowingService.AsyncDataServices
 
         public async Task SendMessageAsync<T>(T message, string routingKey)
         {
-            // Kiểm tra: Nếu chưa kết nối hoặc kết nối bị đóng thì kết nối lại
             if (_connection == null || !_connection.IsOpen)
             {
                 await InitRabbitMQ();
             }
-
-            // Nếu vẫn không kết nối được thì bỏ qua (hoặc throw exception tùy bạn)
+            
             if (_channel == null || !_channel.IsOpen) 
             {
-                 Console.WriteLine("--> RabbitMQ chưa sẵn sàng.");
+                 Console.WriteLine("--> RabbitMQ not ready.");
                  return;
             }
 
             var json = JsonSerializer.Serialize(message);
             var body = Encoding.UTF8.GetBytes(json);
-
-            // BasicPublishAsync thay vì BasicPublish
+            
             await _channel.BasicPublishAsync(
                 exchange: "library_exchange",
                 routingKey: routingKey,
-                mandatory: false, // Thêm tham số này (mặc định false)
-                basicProperties: new BasicProperties(), // Cần khởi tạo properties
+                mandatory: false,
+                basicProperties: new BasicProperties(), 
                 body: body);
 
-            Console.WriteLine($"--> Đã gửi tin nhắn (Async): {json}");
+            Console.WriteLine($"--> Send Message (Async): {json}");
         }
     }
 }

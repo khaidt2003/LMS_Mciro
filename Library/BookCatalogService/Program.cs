@@ -17,6 +17,14 @@ builder.Services.AddDbContext<BookDbContext>(options =>
     options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
 });
 
+builder.WebHost.ConfigureKestrel(options =>
+{
+    // Cổng 5000: Dành riêng cho gRPC (Chạy HTTP/2 không bảo mật)
+    options.ListenLocalhost(5000, o => o.Protocols = HttpProtocols.Http2);
+
+    // Cổng 5001: Dành cho REST API & Swagger (Chạy HTTP/1)
+    options.ListenLocalhost(5001, o => o.Protocols = HttpProtocols.Http1);
+});
 
 
 builder.Services.AddControllers();

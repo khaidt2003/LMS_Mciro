@@ -1,5 +1,5 @@
 using System.Net.NetworkInformation;
-using BooksCatalogService.GrpcServices;
+
 using BooksCatalogService.Protos;
 
 namespace BorrowingService.GrpcService;

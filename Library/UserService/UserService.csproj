@@ -20,8 +20,5 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="7.5.1" />
   </ItemGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\BookCatalogService\BookCatalogService.csproj" />
-  </ItemGroup>
 
 </Project>

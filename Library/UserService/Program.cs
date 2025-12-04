@@ -4,7 +4,6 @@ using UserService.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using System.Text;
-using BooksCatalogService.Repository;
 using DotNetEnv;
 using UserService.Repositories;
 

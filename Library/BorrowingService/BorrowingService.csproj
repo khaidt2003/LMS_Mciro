@@ -14,6 +14,7 @@
           <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
           <PrivateAssets>all</PrivateAssets>
         </PackageReference>
+        <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.4" />
         <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="8.0.22" />
         <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.4" />
         <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.4">
@@ -26,8 +27,5 @@
     </ItemGroup>
     <ItemGroup>
         <Protobuf Include="Proto\Book.proto" GrpcServices="Client" />
-    </ItemGroup>
-    <ItemGroup>
-      <ProjectReference Include="..\BookCatalogService\BookCatalogService.csproj" />
     </ItemGroup>
 </Project>
