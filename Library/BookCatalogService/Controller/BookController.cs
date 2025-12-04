@@ -34,14 +34,14 @@ namespace BooksCatalogService.Controller
         }
         
         [HttpPost]
-        // [Authorize(Roles = "Admin")]  
+        [Authorize(Roles = "Admin")]  
         public async Task<IActionResult> AddBook(CreateBookDto newBook)
         {
             return Ok(await _bookService.AddBook(newBook));
         }
 
         [HttpPut("{id}")]
-        // [Authorize(Roles = "Admin")] 
+        [Authorize(Roles = "Admin")] 
         public async Task<IActionResult> UpdateBook(int id, UpdateBookDto updatedBook)
         {
             var response = await _bookService.UpdateBook(id, updatedBook);
@@ -53,7 +53,7 @@ namespace BooksCatalogService.Controller
         }
         
         [HttpDelete("{id}")]
-        // [Authorize(Roles = "Admin")] 
+        [Authorize(Roles = "Admin")] 
         public async Task<IActionResult> DeleteBook(int id)
         {
             var response = await _bookService.DeleteBook(id);

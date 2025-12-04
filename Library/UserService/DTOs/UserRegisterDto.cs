@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using UserService.Models;
 
 namespace UserService.DTOs
 {
@@ -15,5 +16,7 @@ namespace UserService.DTOs
         [Required(ErrorMessage = "Email là bắt buộc.")]
         [EmailAddress(ErrorMessage = "Định dạng email không hợp lệ.")]
         public string Email { get; set; }
+        
+        public int Roles { get; set; } = Role.User;
     }
 }

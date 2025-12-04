@@ -25,6 +25,7 @@ public class BookService : IBookService
             AvailableCopies =  (int)book.AvailableCopies!,
             CategoryNames = book.BookCategories.Select(bc => bc.Category.Name).ToList()
         }).ToList();
+        response.Message = "Books retrieved successfully.";
         return response;
     }
 
@@ -151,6 +152,7 @@ public class BookService : IBookService
         
         await _bookRepository.SaveChangesAsync();
         response.Data = true;
+        response.Message = "Book deleted successfully.";
         return response;
     }
 }

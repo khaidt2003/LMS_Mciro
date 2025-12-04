@@ -1,6 +1,5 @@
 {
   "Routes": [
-    // UserService
     {
       "UpstreamPathTemplate": "/gateway/auth/{everything}",
       "UpstreamHttpMethod": [ "Post" ],
@@ -9,11 +8,10 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 5269
+          "Port": 5005
         }
       ]
     },
-    // BookCatalogService
     {
       "UpstreamPathTemplate": "/gateway/books",
       "UpstreamHttpMethod": [ "Get", "Post" ],
@@ -22,10 +20,25 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 5159
+          "Port": 5001
         }
-      ]
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      },
+      "RateLimitOptions": {
+        "ClientWhitelist": [],
+        "EnableRateLimiting": true,
+        "Period": "5s",
+        "PeriodTimespan": 10,
+        "Limit": 2,
+        "QuotaExceededMessage": "Bạn đã gửi quá nhiều yêu cầu, vui lòng thử lại sau.",
+        "HttpStatusCode": 429
+      }
     },
+    
+    
     {
       "UpstreamPathTemplate": "/gateway/books/{id}",
       "UpstreamHttpMethod": [ "Get", "Put", "Delete" ],
@@ -34,11 +47,14 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 5159
+          "Port": 5001
         }
-      ]
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      }
     },
-    // BorrowingService
     {
       "UpstreamPathTemplate": "/gateway/borrowing/{action}",
       "UpstreamHttpMethod": [ "Post" ],
@@ -47,12 +63,17 @@
       "DownstreamHostAndPorts": [
         {
           "Host": "localhost",
-          "Port": 5005
+          "Port": 5269
         }
-      ]
+      ],
+      "AuthenticationOptions": {
+        "AuthenticationProviderKey": "Bearer",
+        "AllowedScopes": []
+      }
     }
+    
   ],
   "GlobalConfiguration": {
-    "BaseUrl": "http://localhost:5000"
+    "BaseUrl": "http://localhost:5002"
   }
 }

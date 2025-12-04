@@ -58,7 +58,7 @@ namespace UserService.Services
                 PasswordHash = passwordHash,
                 PasswordSalt = passwordSalt,
                 Email = request.Email,
-                Roles = Role.User
+                Roles = request.Roles
             };
 
             var newUser = await _userRepository.AddUserAsync(user);
