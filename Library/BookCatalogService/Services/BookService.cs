@@ -109,8 +109,7 @@ public class BookService : IBookService
         {
             book.Title = updatedBook.Title;
         }
-
-        // 2. Chỉ update Author nếu người dùng có gửi
+        
         if (!string.IsNullOrEmpty(updatedBook.Author))
         {
             book.Author = updatedBook.Author;
@@ -125,8 +124,7 @@ public class BookService : IBookService
     
         await _bookRepository.UpdateAsync(book);
         await _bookRepository.SaveChangesAsync();
-
-        // Map dữ liệu trả về
+        
         response.Data = new BookDto
         {
             Id = book.Id,
@@ -136,7 +134,7 @@ public class BookService : IBookService
             CategoryNames = book.BookCategories.Select(bc => bc.Category.Name).ToList()
         };
     
-        response.Message = "Book updated successfully."; // Thêm thông báo cho rõ ràng
+        response.Message = "Book updated successfully.";
         return response;
     }
 

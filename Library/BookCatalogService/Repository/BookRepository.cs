@@ -15,7 +15,10 @@ public class BookRepository : IBookRepository
 
     public async Task<List<Book>> GetAllAsync(string? title, string? author)
     {
-        var query = _context.Books.AsQueryable();
+        var query = _context.Books
+            .Include(b => b.BookCategories).
+            ThenInclude(bc => bc.Category).
+            AsQueryable();
 
         if (!string.IsNullOrWhiteSpace(title))
         {
@@ -73,16 +76,14 @@ public class BookRepository : IBookRepository
     public async Task<bool> ReserveBookAsync(int bookId)
     {
         var book = await _context.Books.FindAsync(bookId);
-    
-        // Nếu sách không tồn tại hoặc số lượng <= 0 thì thất bại
+        
         if (book == null || (book.AvailableCopies ?? 0) <= 0) 
         {
             return false;
         }
 
         book.AvailableCopies = (book.AvailableCopies ?? 0) - 1;
-    
-        // Đánh dấu đã sửa và lưu
+        
         _context.Books.Update(book);
         return await _context.SaveChangesAsync() > 0;
     }
@@ -95,8 +96,7 @@ public class BookRepository : IBookRepository
         {
             return false;
         }
-
-        // Cộng thêm 1 vào kho
+        
         book.AvailableCopies = (book.AvailableCopies ?? 0) + 1;
     
         _context.Books.Update(book);

@@ -28,13 +28,10 @@ public class EmailService : IEmailService
 
         try
         {
-            // Connect to the server, using the port and enabling STARTTLS
             await client.ConnectAsync(smtpSettings["Host"], int.Parse(smtpSettings["Port"]!), SecureSocketOptions.StartTls);
-
-            // Authenticate
+            
             await client.AuthenticateAsync(smtpSettings["Username"], smtpSettings["Password"]);
-
-            // Send the message
+            
             await client.SendAsync(message);
             
             Console.WriteLine($"--> Email sent successfully to {to}");

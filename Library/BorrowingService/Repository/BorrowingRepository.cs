@@ -15,7 +15,7 @@ public class BorrowingRepository : IBorrowingRepository
 
     public async Task<Borrowing> AddBorrowingAsync(Borrowing borrowing)
     {
-        // EF Core sẽ tự động track và insert cả Borrowing lẫn List<BorrowingItem>
+        
         await _context.Borrowings.AddAsync(borrowing);
         await _context.SaveChangesAsync();
         return borrowing;
@@ -23,7 +23,7 @@ public class BorrowingRepository : IBorrowingRepository
 
     public async Task<BorrowingItem?> GetItemByIdAsync(int itemId)
     {
-        // Lấy item và Include luôn thông tin phiếu mượn cha (nếu cần kiểm tra User)
+        
         return await _context.BorrowingItems
             .Include(i => i.Borrowing)
             .FirstOrDefaultAsync(i => i.Id == itemId);

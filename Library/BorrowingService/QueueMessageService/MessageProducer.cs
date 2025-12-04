@@ -16,8 +16,7 @@ namespace BorrowingService.AsyncDataServices
         public MessageProducer(IConfiguration configuration)
         {
             _configuration = configuration;
-
-            // 1. Chỉ cấu hình Factory ở đây, chưa kết nối ngay
+            
             _factory = new ConnectionFactory()
             {
                 HostName = _configuration["RabbitMQ:Hostname"],
