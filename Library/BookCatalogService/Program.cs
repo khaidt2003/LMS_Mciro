@@ -3,18 +3,34 @@ using BooksCatalogService.Data;
 using BooksCatalogService.GrpcServices;
 using BooksCatalogService.Repository;
 using BooksCatalogService.Services;
+using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 
+Env.Load();
 var builder = WebApplication.CreateBuilder(args);
+
+//Config Connection String
+
+var dbHost = Environment.GetEnvironmentVariable("DB_HOST");
+var dbPort = Environment.GetEnvironmentVariable("DB_PORT");
+var dbUser = Environment.GetEnvironmentVariable("DB_USER");
+var dbPass = Environment.GetEnvironmentVariable("DB_PASSWORD");
+var dbName = Environment.GetEnvironmentVariable("DB_NAME");
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (!string.IsNullOrWhiteSpace(dbHost) && !string.IsNullOrWhiteSpace(dbPort) && !string.IsNullOrWhiteSpace(dbUser) && !string.IsNullOrWhiteSpace(dbName) &&
+    !string.IsNullOrWhiteSpace(dbPass))
+{
+    connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username={dbUser};Password={dbPass}";
+}
 
 // Add services to the container.
 builder.Services.AddDbContext<BookDbContext>(options =>
 {
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
+    options.UseNpgsql(connectionString);
 });
 
 builder.WebHost.ConfigureKestrel(options =>
@@ -74,7 +90,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         {
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8
-                .GetBytes(builder.Configuration.GetSection("AppSettings:Token").Value!)),
+                .GetBytes(builder.Configuration["APP_SETTINGS_TOKEN"]!)),
             ValidateIssuer = false,
             ValidateAudience = false
         };

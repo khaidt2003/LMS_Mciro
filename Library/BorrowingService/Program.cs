@@ -6,12 +6,13 @@ using BorrowingService.GrpcService;
 using BorrowingService.QueueMessageService;
 using BorrowingService.Repository;
 using BorrowingService.Service;
+using DotNetEnv;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-
+Env.Load();
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. CẤU HÌNH CỔNG (PORTS)
@@ -23,9 +24,26 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
-// 2. DATABASE
+//Config Connection String
+
+var dbHost = Environment.GetEnvironmentVariable("DB_HOST");
+var dbPort = Environment.GetEnvironmentVariable("DB_PORT");
+var dbUser = Environment.GetEnvironmentVariable("DB_USER");
+var dbPass = Environment.GetEnvironmentVariable("DB_PASSWORD");
+var dbName = Environment.GetEnvironmentVariable("DB_NAME");
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+Console.WriteLine("avc");
+if (!string.IsNullOrWhiteSpace(dbHost) && !string.IsNullOrWhiteSpace(dbPort) && !string.IsNullOrWhiteSpace(dbUser) && !string.IsNullOrWhiteSpace(dbName) &&
+    !string.IsNullOrWhiteSpace(dbPass))
+{
+    connectionString = $"Host={dbHost};Port={dbPort};Database={dbName};Username=postgres;Password={dbPass}";
+}
+
+// Add services to the container.
 builder.Services.AddDbContext<BorrowingDbContext>(options =>
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection")));
+{
+    options.UseNpgsql(connectionString);
+});
 
 // 3. RABBITMQ (Async)
 builder.Services.AddSingleton<IMessageProducer, MessageProducer>();
@@ -73,7 +91,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         {
             ValidateIssuerSigningKey = true,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8
-                .GetBytes(builder.Configuration.GetSection("AppSettings:Token").Value!)),
+                .GetBytes(builder.Configuration["APP_SETTINGS_TOKEN"]!)),
             ValidateIssuer = false,
             ValidateAudience = false
         };
